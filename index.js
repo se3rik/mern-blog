@@ -1,10 +1,16 @@
 import express from "express";
 import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
+import { validationResult } from "express-validator";
+import bcrypt from "bcrypt";
+
+import { registrationValidation } from "./validations/auth.js";
+
+import UserModel from "./models/User.js";
 
 mongoose
   .connect(
-    "mongodb+srv://se3rik:SeregaSwapp1232004@mern-cluster.dtimc.mongodb.net/?retryWrites=true&w=majority&appName=MERN-Cluster"
+    "mongodb+srv://se3rik:SeregaSwapp1232004@mern-cluster.dtimc.mongodb.net/blog?retryWrites=true&w=majority&appName=MERN-Cluster"
   )
   .then(() => {
     console.log("DataBase OK");
@@ -17,23 +23,47 @@ const app = express();
 
 app.use(express.json());
 
-app.get("/", (req, res) => {
-  res.send("Hello World!");
-});
+app.post("/auth/registration", registrationValidation, async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json(errors.array());
+    }
 
-app.post("/auth/login", (req, res) => {
-  const token = jwt.sign(
-    {
+    const password = req.body.password;
+    const salt = await bcrypt.genSalt(10);
+    const hash = await bcrypt.hash(password, salt);
+
+    const doc = new UserModel({
       email: req.body.email,
-      fullName: "Vasya Pupkin",
-    },
-    "secret123"
-  );
+      passwordHash: hash,
+      fullName: req.body.fullName,
+      avatarUrl: req.body.avatarUrl,
+    });
+    const user = await doc.save();
 
-  res.json({
-    success: true,
-    token,
-  });
+    const token = jwt.sign(
+      {
+        _id: user._id,
+      },
+      "secret123",
+      {
+        expiresIn: "30d",
+      }
+    );
+
+    const { passwordHash, ...userData } = user._doc;
+
+    res.json({
+      ...userData,
+      token,
+    });
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({
+      message: "Не удалось зарегистрироваться",
+    });
+  }
 });
 
 app.listen(4444, (err) => {
