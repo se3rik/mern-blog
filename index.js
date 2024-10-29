@@ -7,6 +7,7 @@ import bcrypt from "bcrypt";
 import { registrationValidation } from "./validations/auth.js";
 
 import UserModel from "./models/User.js";
+import checkAuth from "./utils/checkAuth.js";
 
 mongoose
   .connect(
@@ -107,6 +108,27 @@ app.post("/auth/login", async (req, res) => {
     console.log(err);
     res.status(500).json({
       message: "Не удалость авторизоваться",
+    });
+  }
+});
+
+app.get("/auth/me", checkAuth, async (req, res) => {
+  try {
+    const user = await UserModel.findById(req.userId);
+
+    if (!user) {
+      return res.status(400).json({
+        message: "Пользователь не найден",
+      });
+    }
+
+    const { passwordHash, ...userData } = user._doc;
+
+    res.json(userData);
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({
+      message: "Не удалось получить информацию о пользователе",
     });
   }
 });
