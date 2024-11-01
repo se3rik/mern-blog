@@ -6,6 +6,7 @@ import { registrationValidation, loginValidation } from "./validations/auth.js";
 import { postCreateValidation } from "./validations/post.js";
 
 import checkAuth from "./utils/checkAuth.js";
+import handleValidationErrors from "./utils/handleValidationErrors.js";
 
 import * as UserController from "./controllers/UserController.js";
 import * as PostController from "./controllers/PostController.js";
@@ -39,9 +40,15 @@ app.use("/uploads", express.static("uploads"));
 app.post(
   "/auth/registration",
   registrationValidation,
+  handleValidationErrors,
   UserController.registration
 );
-app.post("/auth/login", loginValidation, UserController.authorization);
+app.post(
+  "/auth/login",
+  loginValidation,
+  handleValidationErrors,
+  UserController.authorization
+);
 app.get("/auth/me", checkAuth, UserController.getProfileInfo);
 
 app.post("/upload", checkAuth, upload.single("image"), (req, res) => {
@@ -52,8 +59,8 @@ app.post("/upload", checkAuth, upload.single("image"), (req, res) => {
 
 app.get("/posts", PostController.getAll);
 app.get("/posts/:id", PostController.getOne);
-app.post("/posts", checkAuth, postCreateValidation, PostController.create);
-app.patch("/posts/:id", checkAuth, PostController.update);
+app.post("/posts", checkAuth, postCreateValidation, handleValidationErrors, PostController.create);
+app.patch("/posts/:id", checkAuth, handleValidationErrors, PostController.update);
 app.delete("/posts/:id", checkAuth, PostController.remove);
 
 app.listen(4444, (err) => {
