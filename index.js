@@ -2,14 +2,11 @@ import express from "express";
 import mongoose from "mongoose";
 import multer from "multer";
 
-import { registrationValidation, loginValidation } from "./validations/auth.js";
-import { postCreateValidation } from "./validations/post.js";
+import { registrationValidation, loginValidation, postCreateValidation } from "./validations/index.js";
 
-import checkAuth from "./utils/checkAuth.js";
-import handleValidationErrors from "./utils/handleValidationErrors.js";
+import { UserController, PostController } from "./controllers/index.js";
 
-import * as UserController from "./controllers/UserController.js";
-import * as PostController from "./controllers/PostController.js";
+import { checkAuth, handleValidationErrors } from "./utils/index.js";
 
 mongoose
   .connect(
@@ -59,8 +56,19 @@ app.post("/upload", checkAuth, upload.single("image"), (req, res) => {
 
 app.get("/posts", PostController.getAll);
 app.get("/posts/:id", PostController.getOne);
-app.post("/posts", checkAuth, postCreateValidation, handleValidationErrors, PostController.create);
-app.patch("/posts/:id", checkAuth, handleValidationErrors, PostController.update);
+app.post(
+  "/posts",
+  checkAuth,
+  postCreateValidation,
+  handleValidationErrors,
+  PostController.create
+);
+app.patch(
+  "/posts/:id",
+  checkAuth,
+  handleValidationErrors,
+  PostController.update
+);
 app.delete("/posts/:id", checkAuth, PostController.remove);
 
 app.listen(4444, (err) => {
